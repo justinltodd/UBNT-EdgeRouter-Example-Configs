@@ -1,4 +1,4 @@
-/* https://github.com/stevejenkins/UBNT-EdgeRouter-Example-Configs */
+/* https://github.com/justinltodd/UBNT-EdgeRouter-Example-Configs */
 firewall {
     all-ping enable
     broadcast-ping disable
@@ -26,8 +26,8 @@ firewall {
             log disable
             protocol icmpv6
         }
-   }
-   ipv6-name WANv6_LOCAL {
+    }
+    ipv6-name WANv6_LOCAL {
         default-action drop
         description "WAN inbound traffic to the router"
         rule 10 {
@@ -99,7 +99,7 @@ firewall {
     }
     name WAN_IN {
         default-action drop
-        description "WAN to internal"
+        description "WAN to Internal"
         rule 10 {
             action accept
             description "Allow established/related"
@@ -141,7 +141,7 @@ firewall {
     }
     name WAN_LOCAL {
         default-action drop
-        description "WAN to router"
+        description "WAN to Router"
         rule 10 {
             action accept
             description "Allow established/related"
@@ -223,7 +223,7 @@ interfaces {
         description "Google Fiber Jack"
         duplex auto
         poe {
-              output 48v
+            output 48v
         }
         speed auto
         vif 2 {
@@ -231,17 +231,17 @@ interfaces {
             description "Google Fiber WAN"
             dhcpv6-pd {
                 pd 0 {
+                    interface eth1 {
+                        host-address ::1
+                        prefix-id :2
+                        service slaac
+                    }
                     interface switch0 {
                         host-address ::1
-                        prefix-id :0
+                        prefix-id :2
                         service slaac
                     }
                     interface switch0.102 {
-                        host-address ::1
-                        prefix-id :1
-                        service slaac
-                    }
-                    interface eth1 {
                         host-address ::1
                         prefix-id :2
                         service slaac
@@ -250,7 +250,7 @@ interfaces {
                 }
                 rapid-commit enable
             }
-            egress-qos "0:3 1:3 2:3 3:3 4:3 5:3 6:3 7:3"
+            egress-qos 0:3
             firewall {
                 in {
                     ipv6-name WANv6_IN
@@ -275,34 +275,34 @@ interfaces {
             in {
                 name LAN_IN
             }
-        }           
+        }
         poe {
             output off
         }
         speed auto
     }
     ethernet eth2 {
-        description "LAN"
+        description "LAN ETHERNET PORT 2"
         duplex auto
         poe {
-              output off
+            output off
         }
         speed auto
-     }
+    }
     ethernet eth3 {
-        description "LAN"
+        description "LAN ETHERNET PORT 3"
         duplex auto
         poe {
-              output off
+            output off
         }
         speed auto
     }
     ethernet eth4 {
-        description "LAN"
+        description "LAN ETHERNET PORT 4"
         duplex auto
         poe {
-              output off
-        }       
+            output off
+        }
         speed auto
     }
     loopback lo {
@@ -360,6 +360,18 @@ service {
     dhcp-server {
         disabled false
         hostfile-update enable
+        shared-network-name Config {
+            authoritative disable
+            subnet 192.168.99.0/24 {
+                default-router 192.168.99.1
+                dns-server 8.8.8.8
+                dns-server 8.8.4.4
+                lease 86400
+                start 192.168.99.101 {
+                    stop 192.168.99.254
+                }
+            }
+        }
         shared-network-name Guest {
             authoritative disable
             subnet 172.16.0.0/24 {
@@ -377,7 +389,6 @@ service {
             authoritative disable
             subnet 192.168.1.0/24 {
                 default-router 192.168.1.1
-                dns-server 192.168.1.1
                 dns-server 8.8.8.8
                 dns-server 8.8.4.4
                 domain-name example.com
@@ -387,28 +398,17 @@ service {
                 }
             }
         }
-        shared-network-name Config {
-            authoritative disable
-            subnet 192.168.99.0/24 {
-                default-router 192.168.99.1
-                dns-server 8.8.8.8
-                dns-server 8.8.4.4
-                lease 86400
-                start 192.168.99.101 {
-                    stop 192.168.99.254
-                }
-            }
-        }
+        static-arp disable
         use-dnsmasq disable
     }
     dns {
         forwarding {
             cache-size 500
             listen-on switch0
-            name-server 2001:4860:4860::8888
-            name-server 2001:4860:4860::8844
             name-server 8.8.8.8
             name-server 8.8.4.4
+            name-server 2001:4860:4860::8888
+            name-server 2001:4860:4860::8844
         }
     }
     gui {
@@ -437,6 +437,14 @@ service {
     }
 }
 system {
+    config-management {
+        commit-revisions 20
+    }
+    conntrack {
+        expect-table-size 2048
+        hash-size 32768
+        table-size 262144
+    }
     host-name UBNT-gateway
     login {
         user ubnt {
@@ -444,14 +452,14 @@ system {
                 encrypted-password $1$zKNoUbAo$gomzUbYvgyUMcD436Wo66.
                 plaintext-password ""
             }
-            full-name "UBNT Admin"
+            full-name ""
             level admin
         }
     }
-    name-server 2001:4860:4860::8888
-    name-server 2001:4860:4860::8844
     name-server 8.8.8.8
     name-server 8.8.4.4
+    name-server 2001:4860:4860::8888
+    name-server 2001:4860:4860::8844
     ntp {
         server 0.ubnt.pool.ntp.org {
         }
@@ -464,7 +472,6 @@ system {
     }
     offload {
         hwnat disable
-        ipsec enable
         ipv4 {
             forwarding enable
             vlan enable
@@ -472,15 +479,6 @@ system {
         ipv6 {
             forwarding enable
             vlan enable
-        }
-    }
-    package {
-        repository wheezy {
-            components "main contrib non-free"
-            distribution wheezy
-            password ""
-            url http://http.us.debian.org/debian
-            username ""
         }
     }
     syslog {
@@ -500,6 +498,7 @@ system {
     }
 }
 
+
 /* Warning: Do not remove the following line. */
-/* === vyatta-config-version: "config-management@1:conntrack@1:cron@1:dhcp-relay@1:dhcp-server@4:firewall@5:ipsec@5:nat@3:qos@1:quagga@2:system@4:ubnt-pptp@1:ubnt-util@1:vrrp@1:webgui@1:webproxy@1:zone-policy@1" === */
-/* Release version: v1.9.1.4939093.161214.0705 */
+/* === vyatta-config-version: "config-management@1:conntrack@1:cron@1:dhcp-relay@1:dhcp-server@4:firewall@5:ipsec@5:nat@3:qos@1:quagga@2:suspend@1:system@4:ubnt-pptp@1:ubnt-udapi-server@1:ubnt-unms@1:ubnt-util@1:vrrp@1:webgui@1:webproxy@1:zone-policy@1" === */
+/* Release version: v1.10.8.5142440.181120.1645 */
