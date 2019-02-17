@@ -24,7 +24,7 @@ firewall {
             action accept
             description "Allow ICMPv6"
             log disable
-            protocol icmpv6
+            protocol ipv6-icmp
         }
     }
     ipv6-name WANv6_LOCAL {
@@ -49,7 +49,7 @@ firewall {
             action accept
             description "Allow ICMPv6"
             log disable
-            protocol icmpv6
+            protocol ipv6-icmp
         }
         rule 40 {
             action accept
@@ -133,7 +133,7 @@ firewall {
             protocol all
             state {
                 established disable
-                invalid enable
+                invalid disable
                 new disable
                 related disable
             }
@@ -141,7 +141,7 @@ firewall {
     }
     name WAN_LOCAL {
         default-action drop
-        description "WAN to Router"
+        description "WAN to router"
         rule 10 {
             action accept
             description "Allow established/related"
@@ -171,7 +171,7 @@ firewall {
         }
         rule 40 {
             action accept
-            description "Allow ICMP"
+            description "ALLOW ICMP"
             log disable
             protocol icmp
         }
@@ -238,12 +238,12 @@ interfaces {
                     }
                     interface switch0 {
                         host-address ::1
-                        prefix-id :2
+                        prefix-id :0
                         service slaac
                     }
                     interface switch0.102 {
                         host-address ::1
-                        prefix-id :2
+                        prefix-id :1
                         service slaac
                     }
                     prefix-length /56
@@ -271,18 +271,13 @@ interfaces {
         address 192.168.99.1/24
         description "Local Config Port"
         duplex auto
-        firewall {
-            in {
-                name LAN_IN
-            }
-        }
         poe {
             output off
         }
         speed auto
     }
     ethernet eth2 {
-        description "LAN ETHERNET PORT 2"
+        description LAN
         duplex auto
         poe {
             output off
@@ -290,7 +285,7 @@ interfaces {
         speed auto
     }
     ethernet eth3 {
-        description "LAN ETHERNET PORT 3"
+        description LAN
         duplex auto
         poe {
             output off
@@ -298,7 +293,7 @@ interfaces {
         speed auto
     }
     ethernet eth4 {
-        description "LAN ETHERNET PORT 4"
+        description LAN
         duplex auto
         poe {
             output off
@@ -362,6 +357,7 @@ service {
         hostfile-update enable
         shared-network-name Config {
             authoritative disable
+            description "Config Port"
             subnet 192.168.99.0/24 {
                 default-router 192.168.99.1
                 dns-server 8.8.8.8
@@ -374,6 +370,7 @@ service {
         }
         shared-network-name Guest {
             authoritative disable
+            description "Guest Network"
             subnet 172.16.0.0/24 {
                 default-router 172.16.0.1
                 dns-server 8.8.8.8
@@ -387,6 +384,7 @@ service {
         }
         shared-network-name LAN {
             authoritative disable
+            description "LAN Network"
             subnet 192.168.1.0/24 {
                 default-router 192.168.1.1
                 dns-server 8.8.8.8
@@ -405,10 +403,10 @@ service {
         forwarding {
             cache-size 500
             listen-on switch0
-            name-server 8.8.8.8
-            name-server 8.8.4.4
             name-server 2001:4860:4860::8888
             name-server 2001:4860:4860::8844
+            name-server 8.8.8.8
+            name-server 8.8.4.4
         }
     }
     gui {
@@ -429,6 +427,9 @@ service {
         port 22
         protocol-version v2
     }
+    unms {
+        disable
+    }
     upnp2 {
         listen-on switch0
         nat-pmp disable
@@ -437,29 +438,19 @@ service {
     }
 }
 system {
-    config-management {
-        commit-revisions 20
-    }
-    conntrack {
-        expect-table-size 2048
-        hash-size 32768
-        table-size 262144
-    }
-    host-name UBNT-gateway
+    host-name ubnt-gateway
     login {
         user ubnt {
             authentication {
                 encrypted-password $1$zKNoUbAo$gomzUbYvgyUMcD436Wo66.
-                plaintext-password ""
             }
-            full-name ""
             level admin
         }
     }
-    name-server 8.8.8.8
-    name-server 8.8.4.4
     name-server 2001:4860:4860::8888
     name-server 2001:4860:4860::8844
+    name-server 8.8.8.8
+    name-server 8.8.4.4
     ntp {
         server 0.ubnt.pool.ntp.org {
         }
@@ -472,6 +463,7 @@ system {
     }
     offload {
         hwnat disable
+        ipsec enable
         ipv4 {
             forwarding enable
             vlan enable
@@ -479,6 +471,15 @@ system {
         ipv6 {
             forwarding enable
             vlan enable
+        }
+    }
+    package {
+        repository wheezy {
+            components "main contrib non-free"
+            distribution wheezy
+            password ""
+            url http://http.us.debian.org/debian
+            username ""
         }
     }
     syslog {
@@ -491,7 +492,7 @@ system {
             }
         }
     }
-    time-zone America/Denver
+    time-zone America/Chicago
     traffic-analysis {
         dpi disable
         export enable
